@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html> 
+    <head>
+        <title>Rsavethread</title>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+        <link rel='stylesheet' type='text/css' href='css/styles.css' />
+
+        <script>
+           
+            window.onload = function() {
+                document.getElementById("save-button").addEventListener("click", function() {
+                    var inputElement = document.getElementById("link-text-field");
+                    var inputValue = inputElement.value;
+                    var encodedLink = encodeURIComponent(inputValue);
+                    window.location.href = "http://localhost:8020/save_thread_comments.php?redditLink=" + encodedLink;
+                });
+            };
+            
+        </script>
+    </head>
+
+    <body>
+        <header>
+        </header>
+        <main>
+            <h4 style="text-align: center;"> Save All Comments On Post </h4>
+            <div id="get-auth-title">
+                Full link to the post:
+            </div>
+            <input type ="text" name = "post_link" id="link-text-field">
+            <div id ="save-button" class ="button-look">
+                Save
+            </div>
+        </main>
+        <footer>
+        </footer>
+
+    </body>
+
+</html>

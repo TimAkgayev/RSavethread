@@ -1,0 +1,82 @@
+main{
+    margin: 3em auto;
+    max-width: 40%;
+}
+
+#get-auth-title{
+    font-size: 2em;
+    text-align: center;;
+}
+
+#link-text-field{
+    width: 100%;
+}
+
+.button-look {
+    background-color: #4CAF50;
+    color: white;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    text-align: center;
+    margin: 1em;
+    text-decoration: none;
+    display: block;
+}
+
+.button-look:hover {
+    background-color: #3e8e41;
+}
+
+.post-info-section{
+    font-size: 1.3em;
+    font-style: italic;
+    margin: 0;
+}
+
+
+ul.tree li {
+    list-style-type: none;
+    position: relative;
+}
+
+ul.tree li ul {
+    display: none;
+}
+
+ul.tree li.open > ul {
+    display: block;
+}
+
+ul.tree li a {
+    color: black;
+    text-decoration: none;
+}
+
+ul.tree li a:before {
+    height: 1em;
+    padding:0 .1em;
+    font-size: .8em;
+    display: block;
+    position: absolute;
+    left: -1.3em;
+    top: .2em;
+}
+
+ul.tree li > a:not(:last-child):before {
+    content: '+';
+}
+
+ul.tree li.open > a:not(:last-child):before {
+    content: '-';
+}
+
+
+.reply {
+    border-radius: 4px;
+    border-style: solid;
+    border-width: 2px;
+    margin: 0.5em;
+}
