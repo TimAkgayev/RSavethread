@@ -36,9 +36,18 @@
     </head>
 
     <body>
-        <header>
+        <header class ="center">
+            <nav>
+                <a href = "index.php" class = "nav-link"> Archive </a>
+                <a href = "new_request.html" class = "nav-link"> Request </a>
+            </nav>
         </header>
         <main>
+           
+
+         <a href="save_thread.php" id ="get-auth-button" class ="button-look" >
+                Save
+         </a>
 
 <?php
 require "Post.php";
@@ -50,6 +59,7 @@ ini_set('max_execution_time', 0);
 $g_postURL = urldecode($_GET['redditLink']);
 $g_postID = "";
 $g_numCommentsLoaded = 0;
+
 
 function GetProtectedCurlRequest($protectedURL, $authorizationHeader, &$outHTTPCode = NULL)
 {
@@ -91,9 +101,10 @@ function GetAuthorizationHeader()
 
 function Parse_Comment_Tree(&$parentComment, $replies)
 {
-
+    
     global $g_postURL, $g_postID, $g_userAgent, $g_numCommentsLoaded;
     
+
     
     foreach($replies as $reply)
     {
@@ -102,6 +113,7 @@ function Parse_Comment_Tree(&$parentComment, $replies)
         //this is an extension with just user ids given
         if($reply['kind'] == "more")
         {
+         
             $commentIDsStr = "";
             foreach($reply['data']['children'] as $commentIDString){
                 $commentIDsStr = $commentIDsStr . $commentIDString . ',';
@@ -141,6 +153,7 @@ function Parse_Comment_Tree(&$parentComment, $replies)
             curl_setopt_array($ch, $curl_options);
            
             $result = curl_exec($ch);
+
             $jsonDecode = json_decode($result, true);
 
 
@@ -149,7 +162,7 @@ function Parse_Comment_Tree(&$parentComment, $replies)
             );
 
             curl_close($ch);
-            if(array_key_exists('data',$response['result']['json']))
+            if(array_key_exists('data', $response['result']['json']))
             {
                 //this replies list is unordered, children and parents are mixed
                 $replyList = $response['result']['json']['data']['things'];
@@ -160,8 +173,10 @@ function Parse_Comment_Tree(&$parentComment, $replies)
                     $parentFound = null;
                     foreach($replyList as &$secondObject)
                     {
+                        
                         if($firstObj['data']['parent_id'] == $secondObject['data']['name'])
                         {
+                        
                             $parentFound = &$secondObject;
                             break;
                         }
@@ -170,13 +185,35 @@ function Parse_Comment_Tree(&$parentComment, $replies)
 
                     if($parentFound)
                     {
-                       // $parentFound['data']['replies'] = array(&$firstObj);
+                        //if an entry already exists append it, otherwise create it. 
+
+                      
+
+                        if(array_key_exists('replies', $parentFound['data'])){
+                            if(is_array($parentFound['data']['replies'])){
+                                if(array_key_exists('data', $parentFound['data']['replies'])){
+                                    $parentFound['data']['replies']['data']['children'][] = &$firstObj;
+                                }
+                                else{
+                                    $parentFound['data']['replies'] = array("kind"=> "Listing", "data" => array( "children" => array (&$firstObj)));
+                                }
+                            }
+                            else{
+                                $parentFound['data']['replies'] = array("kind"=> "Listing", "data" => array( "children" => array (&$firstObj)));
+                            }
+                        }
+                        else{
+                            $parentFound['data']['replies'] = array("kind"=> "Listing", "data" => array( "children" => array (&$firstObj)));
+                        }
                     }
                     else{
-                        $tree[] = $firstObj;
+                        $tree[] = &$firstObj;
                     }
-                }
 
+                    unset($secondObject);
+                    unset($parentFound);
+                }
+                unset($firstObj);
                 
                 Parse_Comment_Tree($parentComment, $tree);
             }
@@ -184,24 +221,24 @@ function Parse_Comment_Tree(&$parentComment, $replies)
         }
         else
         {  
+
+            
             $commentText = $reply['data']['body'];  
             $commentAuthor = $reply['data']['author'];
-            $commentLikes = $reply['data']['ups'];
-            $commentDislikes = $reply['data']['downs'];
+            $commentScore = $reply['data']['score'];
             $commentDateUTC = $reply['data']['created'];
-            $commentID = $reply['data']['id'];
+            $commentID = $reply['data']['name'];
+            $commentParentID = $reply['data']['parent_id'];
 
-         
 
-            $newComment = new Post($commentID, $commentText, $commentAuthor, $commentDateUTC, $commentLikes, $commentDislikes);
+            $newComment = new Post($commentID, $commentText, $commentAuthor, $commentDateUTC, (int)$commentScore, $commentParentID);
             $parentComment->AddReply($newComment);
             $g_numCommentsLoaded++;
         
             if(is_array($reply['data']['replies']))
             {
                 if(count($reply['data']['replies'])!=0){
-
-                     $replyList = $reply['data']['replies']['data']['children'];
+                    $replyList = $reply['data']['replies']['data']['children'];
                     Parse_Comment_Tree($newComment, $replyList);
                 }
             }
@@ -267,34 +304,40 @@ $response = array(
     );
 
 
-echo('<strong>Response for fetch comments.json:</strong><pre>');
+//echo('<strong>Response for fetch comments.json:</strong><pre>');
 //print_r($response);
-echo('</pre>');
+//echo('</pre>');
 
 
 $postTitle = $response['result'][0]['data']['children'][0]['data']['title'];
-$subReddit = $response['result'][0]['data']['children'][0]['data']['subreddit_name_prefixed'];
 $postAuthor =    $response['result'][0]['data']['children'][0]['data']['author'];
-$fullUrl =   $response['result'][0]['data']['children'][0]['data']['url'];
+$fullUrl =   "https://reddit.com" . $response['result'][0]['data']['children'][0]['data']['permalink'];
 $postDateUTC =  $response['result'][0]['data']['children'][0]['data']['created_utc'];
-$postDate =  date("m-d-Y H:i:s", $response['result'][0]['data']['children'][0]['data']['created_utc']);
 $postText =  $response['result'][0]['data']['children'][0]['data']['selftext'];
 $postID = $response['result'][0]['data']['children'][0]['data']['name'];
 global $g_postID;
 $g_postID = $postID;
-$postLikes =  $response['result'][0]['data']['children'][0]['data']['ups'];
-$postDislikes =  $response['result'][0]['data']['children'][0]['data']['downs'];
-$replies = $response['result'][1]['data']['children'];
-$commentArraySize = count($replies); 
+$postScore =  $response['result'][0]['data']['children'][0]['data']['score'];
+$postSubreddit = $response['result'][0]['data']['children'][0]['data']['subreddit_name_prefixed'];
+$postThumbnailURL = $response['result'][0]['data']['children'][0]['data']['thumbnail'];
 
+$rootPost = new Post($postID, $postText, $postAuthor, $postDateUTC, $postScore, 0, $postSubreddit, $fullUrl, $postTitle, $postThumbnailURL);
+
+$replies = $response['result'][1]['data']['children'];
+Parse_Comment_Tree($rootPost, $replies);
+
+$postDate =  date("Y-m-d H:i:s", $response['result'][0]['data']['children'][0]['data']['created_utc']);
 
 $htmlThreadInfo = "
 <div id = 'post-info'>
+    <div style='margin:0em auto; text-align:center; display:block' class = 'post-info-section'>
+        <img style ='display: inline-block; max-width:100%; height: auto' src='$postThumbnailURL'>
+    </div>
     <div class = 'post-info-section'>
         Title: $postTitle
     </div>
     <div class = 'post-info-section'>
-        Subreddit: $subReddit
+        Subreddit: $postSubreddit
     </div>
     <div class = 'post-info-section'>
         Author: $postAuthor
@@ -312,159 +355,31 @@ $htmlThreadInfo = "
 ";
 
 echo($htmlThreadInfo);
-
-
-
-$rootPost = new Post($postID, $postText, $postAuthor, $postDateUTC, $postLikes, $postDislikes, $fullUrl, $postTitle);
-Parse_Comment_Tree($rootPost, $replies);
 Print_Tree($rootPost);
 
 
-$theadInfo = array();
-
-$commentList = array("author" => array(),
-                  "created_utc" => array(),
-                  "score" => array(),
-                  "body" => array()
-                 );
-
-
-
-
-//remove the first entry of each segment except body
-array_shift($commentList['author']);
-array_shift($commentList['score']);
-array_shift($commentList['created_utc']);
-
-//print_r($commentList);
-//print_r($threadInfo);
+$postInfo = array(
+    'Post_title' => $postTitle,
+    'Post_author' => $postAuthor,
+    'Post_link' => $fullUrl,
+    'Post_date' => $postDateUTC,
+    'Post_text' => $postText,
+    'Post_ID' => $postID,
+    'Score' => $postScore,
+    'Subreddit' => $postSubreddit,
+    'Thumbnail_link' => $postThumbnailURL
+);
 
 
-$mysql_un = 'tim';
-$mysql_pw = 'akgayev';
-$mysql_db = 'reddit_db';
+$allPostChildrenAsArray = array();
+$rootPost->GetAllChildrenBelowAsAssociativeArray($allPostChildrenAsArray, $rootPost);
 
-$mysql_link = mysqli_connect('localhost', $mysql_un, $mysql_pw, $mysql_db);
+$allPostChildren = array();
+$rootPost->GetAllChildrenBelow($allPostChildren, $rootPost);
 
-if(!$mysql_link)
-{
-    echo "Error: Uanble to connect to MySQL" . "<br>";
-}
-
-for($i = 0; $i < count($commentList); $i++)
-{
-   
-    $convertedDate = date('Y-m-d', $commentList['created_utc'][$i]);
-    $mysql_query = "INSERT INTO Comments (Post_title, Post_link, Comment_author, Comment_date, Likes, Comment_text) VALUES (" . '\'' . $threadInfo['title'] . '\'' . ',' . '\'' . $threadInfo['url'] . '\'' . ',' . '\'' . $commentList['author'][$i] . '\'' . ',' . '\'' . $convertedDate . '\'' . ',' . '\'' . $commentList['score'][$i] . '\'' . ',' . "\"" . addslashes($commentList['body'][$i]) . "\"" . ')';
-    
-
-    
-    if($mysql_link->query($mysql_query) === TRUE)
-    {
-        
-   }
-    else
-    {
-        echo "MYSQL Error: " . "<br>" . $mysql_link->error; 
-    }
-}
-
-
-
-$second_request_base= "https://www.oauth.reddit.com/api/morechildren?link_id=t3_arm6h8&limit_children=true&children=";
-    
-//$protected_resource_url = $second_request;
-
-$childRequestStrings = array();
-
-foreach($messageSets as $set)
-{
-    $allChildren = "";
-    foreach($set as $value )
-    {
-        $allChildren = $allChildren . $value . ',';
-    }
-    
-    $allChildren = substr_replace($allChildren, "", -1);
-    $finalUrl = $second_request_base . $allChildren;
-    array_push($childRequestStrings, $finalUrl);
-}
-
-//print_r($childRequestStrings);
-//print_r($messageSets);
-
-
-//set up the header to contain the access token
-$http_headers['Authorization'] = 'Bearer ' . $auth_token;
-
-$header = array();
-foreach($http_headers as $key => $parsed_urlvalue) 
-{
-    $header[] = "$key: $parsed_urlvalue";
-}
-
-
-$count = 0;
-foreach($childRequestStrings as $value)
-{
-    
-
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-    curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-    curl_setopt($ch, CURLOPT_URL, $value);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-
-
-    $result = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $content_type = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-    $json_decode = json_decode($result, true);
-
-    curl_close($ch);
-
-    $response = array(
-            'result' => (null === $json_decode) ? $result : $json_decode,
-            'code' => $http_code,
-            'content_type' => $content_type
-        );
-
-
-   // print_r($response);
-    $commentList = array("author" => array(),
-                  "created_utc" => array(),
-                  "score" => array(),
-                  "body" => array()
-                 );
-    
-    my_array_search($response, $commentList, $threadInfo);
-    
-    for($i = 0; $i < count($commentList['body']); $i++)
-    {
-
-
-        $convertedDate = date('Y-m-d', $commentList['created_utc'][$i]);
-        $mysql_query = "INSERT INTO Comments (Post_title, Post_link, Comment_author, Comment_date, Likes, Comment_text) VALUES (" . '\'' . $threadInfo['title'] . '\'' . ',' . '\'' . $threadInfo['url'] . '\'' . ',' . '\'' . $commentList['author'][$i] . '\'' . ',' . '\'' . $convertedDate . '\'' . ',' . '\'' . $commentList['score'][$i] . '\'' . ',' . "\"" . addslashes($commentList['body'][$i]) . "\"" . ')';
-
-
-
-        if($mysql_link->query($mysql_query) === TRUE)
-        {
-
-        }
-        else
-        {
-            echo "MYSQL Error: " . "<br>" . $mysql_link->error; 
-        }
-    }
-
-    $count++;
-   // if($count == 50)
-     //   break;
-}
+//save the variables for the next session
+$_SESSION['postInfo'] = $postInfo;
+$_SESSION['postReplies'] = $allPostChildrenAsArray;
 
 ?>
 

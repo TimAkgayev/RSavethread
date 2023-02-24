@@ -12,7 +12,7 @@
                     var inputElement = document.getElementById("link-text-field");
                     var inputValue = inputElement.value;
                     var encodedLink = encodeURIComponent(inputValue);
-                    window.location.href = "http://localhost:8020/save_thread_comments.php?redditLink=" + encodedLink;
+                    window.location.href = "http://localhost:8020/preview_thread.php?redditLink=" + encodedLink;
                 });
             };
             
@@ -23,13 +23,13 @@
         <header>
         </header>
         <main>
-            <h4 style="text-align: center;"> Save All Comments On Post </h4>
+            <h4 style="text-align: center;"> Find a Reddit Post </h4>
             <div id="get-auth-title">
                 Full link to the post:
             </div>
             <input type ="text" name = "post_link" id="link-text-field">
             <div id ="save-button" class ="button-look">
-                Save
+                Preview
             </div>
         </main>
         <footer>

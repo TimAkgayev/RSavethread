@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Database addition complete</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script type="text/javascript">
+		window.onload = function() {
+
+			// Get the status parameter from the URL
+			const urlParams = new URLSearchParams(window.location.search);
+			const status = urlParams.get('status');
+
+			// Set the message based on the status parameter
+			if (status === 'pass') {
+				document.getElementById('message').innerHTML = '<h1>Database Addition Complete.</h1> <p> Redirecting to main page in 5 seconds...</p>';
+			} else if (status === 'fail') {
+				document.getElementById('message').innerHTML = '<h1>Database Addition Failed.</h1> <p> Redirecting to main page in 5 seconds...</p>';
+			} else {
+				document.getElementById('message').innerHTML = 'Invalid status parameter.';
+			}
+
+
+			setTimeout(function() {
+				window.location.href = "index.php";
+			}, 5000); // wait for 5 seconds before redirecting
+		};
+	</script>
+</head>
+<body>
+	<div style= "margin: 0 auto; width: 50%" id="message">
+	</div>
+</body>
+</html>
+
+

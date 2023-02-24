@@ -107,7 +107,7 @@ else
   
    
     
-    header("Location: save_thread.html");
+    header("Location: find_thread.html");
     die("Redirected to custom request page");
 
 /*
